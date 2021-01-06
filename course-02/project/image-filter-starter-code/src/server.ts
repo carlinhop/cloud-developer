@@ -1,6 +1,9 @@
-import express from 'express';
+import *  as fs from 'fs'
+
+import {deleteLocalFiles, filterImageFromURL} from './util/util';
+
 import bodyParser from 'body-parser';
-import {filterImageFromURL, deleteLocalFiles} from './util/util';
+import express from 'express';
 
 (async () => {
 
@@ -17,7 +20,6 @@ import {filterImageFromURL, deleteLocalFiles} from './util/util';
   // GET /filteredimage?image_url={{URL}}
   // endpoint to filter an image from a public url.
   // IT SHOULD
-  //    1
   //    1. validate the image_url query
   //    2. call filterImageFromURL(image_url) to filter the image
   //    3. send the resulting file in the response
@@ -28,6 +30,30 @@ import {filterImageFromURL, deleteLocalFiles} from './util/util';
   //   the filtered image file [!!TIP res.sendFile(filteredpath); might be useful]
 
   /**************************************************************************** */
+
+  app.get("/filteredimage", async(req,res)=>{
+    let { image_url } = req.query;
+    if ( !image_url ) {
+      return res.status(400)
+                .send(`image URL is required`);
+    }
+    const filteredImage =  await filterImageFromURL(image_url)
+    if(filteredImage){
+      const sendFile = (filteredImage: string):Promise<string> =>{
+        return new Promise(()=>{
+          return res.sendFile(filteredImage)
+        })
+      }  
+      const sentFile = await sendFile(filteredImage)
+      if(sentFile){
+        deleteLocalFiles([filteredImage])
+      }
+    } else {
+      return res.status(500)
+      .send(`Something went wrong!`);
+    }
+
+  })
 
   //! END @TODO1
   
